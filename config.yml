@@ -12,6 +12,7 @@ general:
   event_buffer: 300
   verbose: false
   info_log: './log/info.log'
+  error_log: './log/error.log'
 # paths - directories you need to track
 # compress
 # - enabled - compression image, if false image compress will not be processed

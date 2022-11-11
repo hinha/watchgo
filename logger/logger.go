@@ -10,12 +10,12 @@ import (
 	"os"
 	"path"
 	"strings"
+	"time"
 )
 
 var (
-	Logger            = zerolog.Logger{}
-	defaultFormatTime = "2006-01-02T15:04:05+07:00"
-	globalFormatTime  = "2006/01/02 15:04:05.000"
+	Logger           = zerolog.Logger{}
+	globalFormatTime = "2006/01/02 15:04:05.000"
 )
 
 func SetGlobalLogger(log zerolog.Logger) {
@@ -23,16 +23,28 @@ func SetGlobalLogger(log zerolog.Logger) {
 }
 
 func New() zerolog.Logger {
-	var writers []io.Writer
 
 	zerolog.TimeFieldFormat = globalFormatTime
-	console := zerolog.ConsoleWriter{Out: os.Stderr}
-	console.FormatLevel = func(i interface{}) string {
-		return strings.ToUpper(fmt.Sprintf("%-6s", i))
+	zerolog.TimestampFunc = func() time.Time {
+		return time.Now().In(time.Local)
 	}
-	writers = append(writers, console)
-	writers = append(writers, newRollingFile())
-	mw := io.MultiWriter(writers...)
+
+	consoleWriter := zerolog.NewConsoleWriter(func(w *zerolog.ConsoleWriter) { w.Out = os.Stderr })
+	consoleWriter.FormatLevel = func(i interface{}) string { return strings.ToUpper(fmt.Sprintf("%-6s", i)) }
+	consoleWriter.FormatTimestamp = func(i interface{}) string {
+		t, err := time.Parse(globalFormatTime, i.(string))
+		if err != nil {
+			return i.(string)
+		}
+		return fmt.Sprintf("%d:%02d:%d", t.Hour(), t.Minute(), t.Second())
+	}
+
+	consoleWriterLeveled := zerolog.MultiLevelWriter(consoleWriter)
+
+	fileWriterInfo := &FilteredWriter{zerolog.MultiLevelWriter(newRollingFile(config.General.InfoLog)), zerolog.InfoLevel}
+	fileWriterError := &FilteredWriter{zerolog.MultiLevelWriter(newRollingFile(config.General.ErrorLog)), zerolog.ErrorLevel}
+
+	mw := zerolog.MultiLevelWriter(consoleWriterLeveled, fileWriterInfo, fileWriterError)
 	if config.Debug {
 		zerolog.SetGlobalLevel(zerolog.DebugLevel)
 	}
@@ -43,16 +55,31 @@ func New() zerolog.Logger {
 		Timestamp().Logger()
 }
 
-func newRollingFile() io.Writer {
-	if err := os.MkdirAll(path.Dir(config.General.InfoLog), 0744); err != nil {
-		log.Error().Err(err).Str("path", path.Dir(config.General.InfoLog)).Msg("can't create log directory")
+func newRollingFile(logPath string) io.Writer {
+	if err := os.MkdirAll(path.Dir(logPath), 0744); err != nil {
+		log.Error().Err(err).Str("path", path.Dir(logPath)).Msg("can't create log directory")
 		return nil
 	}
 
 	return &lumberjack.Logger{
-		Filename: config.General.InfoLog,
+		Filename: logPath,
 		MaxAge:   30, // days
 	}
+}
+
+type FilteredWriter struct {
+	w     zerolog.LevelWriter
+	level zerolog.Level
+}
+
+func (w *FilteredWriter) Write(p []byte) (n int, err error) {
+	return w.w.Write(p)
+}
+func (w *FilteredWriter) WriteLevel(level zerolog.Level, p []byte) (n int, err error) {
+	if level == w.level {
+		return w.w.WriteLevel(level, p)
+	}
+	return len(p), nil
 }
 
 func UpdateContext(update func(c zerolog.Context) zerolog.Context) {
