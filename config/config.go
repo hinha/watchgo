@@ -12,9 +12,8 @@ import (
 const AppName = "watch-go"
 
 var (
-	cfg        config
-	ConfigFile string
-	Logger     *log.Logger
+	cfg  config
+	File string
 
 	Debug         bool
 	General       = &cfg.General
@@ -74,7 +73,7 @@ func LoadConfig(configFile string) (error error) {
 
 // ReloadConfig parse yml config
 func ReloadConfig() error {
-	filename, err := filepath.Abs(ConfigFile)
+	filename, err := filepath.Abs(File)
 	if err != nil {
 		return fmt.Errorf("[%s] can not be reloaded, filepath Abs error: %s\n", AppName, err.Error())
 	}
