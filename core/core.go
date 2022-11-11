@@ -4,8 +4,8 @@ import "C"
 import (
 	"fmt"
 	"github.com/hinha/watchgo/config"
+	"github.com/hinha/watchgo/logger"
 	"io"
-	"log"
 	"os"
 	"os/exec"
 	"path"
@@ -44,9 +44,7 @@ type Builder interface {
 	copy(srcPath, dstPath string)
 }
 
-type builder struct {
-	log *log.Logger
-}
+type builder struct{}
 
 func (c *builder) createFolder(subPath []string) string {
 	_, subFolder := subPath[0], subPath[1]
@@ -66,7 +64,7 @@ func (c *builder) createFolder(subPath []string) string {
 
 	originPath := path.Join(config.FileSystemCfg.Backup.HardDrivePath, staticBackupFolder, subFolder)
 	if err := os.MkdirAll(originPath, os.ModePerm); err != nil {
-		c.log.Printf("creating folder err: %v\n", err)
+		logger.Error().Err(err).Msg("creating folder")
 		return ""
 	}
 
@@ -76,32 +74,32 @@ func (c *builder) createFolder(subPath []string) string {
 func (c *builder) copy(srcPath, dstPath string) {
 	sourceFileStat, _ := os.Stat(srcPath)
 	if !sourceFileStat.Mode().IsRegular() {
-		c.log.Printf("Error %s is not a regular file\n", srcPath)
+		logger.Error().Err(fmt.Errorf("error %s is not a regular file", srcPath)).Msg("")
 		return
 	}
 
 	source, err := os.Open(srcPath)
 	if err != nil {
-		c.log.Printf("Copy file error: %s\n", err.Error())
+		logger.Error().Err(err).Msg("source open file")
 		return
 	}
 	defer source.Close()
 
 	destination, err := os.Create(dstPath)
 	if err != nil {
-		c.log.Printf("Copy file error: %s\n", err.Error())
+		logger.Error().Err(err).Msg("destination create file")
 		return
 	}
 	defer destination.Close()
 
 	_, _ = io.Copy(destination, source)
-	c.log.Printf("Copy file %s into %s was successfully\n", filepath.Base(srcPath), dstPath)
+	logger.Info().Msg(fmt.Sprintf("Copy file %s into %s was successfully", filepath.Base(srcPath), dstPath))
 }
 
 func (c *builder) compress(quality int, filePath, interlace string) {
 	fi, err := os.Stat(filePath)
 	if err != nil {
-		c.log.Printf("Load file error: %s\n", err.Error())
+		logger.Error().Err(err).Msg("load file")
 		return
 	}
 	beforeSize := fi.Size()
@@ -109,13 +107,13 @@ func (c *builder) compress(quality int, filePath, interlace string) {
 	cmd := fmt.Sprintf("identify -format %s '%s'", "'%Q'", filePath)
 	out, err := exec.Command("bash", "-c", cmd).Output()
 	if err != nil {
-		c.log.Printf("Error incorrect file name %s", filePath)
+		logger.Error().Err(err).Msg(fmt.Sprintf("incorrect file name %s", filePath))
 		return
 	}
 
 	qualityNum, _ := strconv.ParseInt(string(out), 10, 0)
 	if int64(quality) >= qualityNum {
-		c.log.Printf("File %s already compressed\n", filePath)
+		logger.Info().Msg(fmt.Sprintf("file %s already compressed", filePath))
 		return
 	}
 
@@ -126,17 +124,17 @@ func (c *builder) compress(quality int, filePath, interlace string) {
 		filePath)
 
 	if _, err := exec.Command("bash", "-c", cmd).Output(); err != nil {
-		c.log.Printf("Compress image error: %s\n", err.Error())
+		logger.Error().Err(err).Msg("compress image")
 	}
 
 	fl, _ := os.Stat(filePath)
 	afterSize := fl.Size()
-	c.log.Printf("Compress file is done, filesize before %d, after %d\n", beforeSize, afterSize)
+	logger.Info().Msg(fmt.Sprintf("compress file is done, filesize before %d, after %d", beforeSize, afterSize))
 	return
 }
 
-func NewBuilder(log *log.Logger) Builder {
-	return &builder{log: log}
+func NewBuilder() Builder {
+	return &builder{}
 }
 
 func GetStaticBackupFolder() string {

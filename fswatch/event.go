@@ -2,7 +2,6 @@ package fswatch
 
 import (
 	"context"
-	"log"
 	"regexp"
 	"strings"
 
@@ -13,7 +12,6 @@ import (
 // ProcessEvent construct
 type ProcessEvent struct {
 	ctx context.Context
-	Log *log.Logger
 
 	image *core.Image
 	file  *core.File
@@ -22,13 +20,12 @@ type ProcessEvent struct {
 // NewEvent cmd wrapper
 func NewEvent(ctx context.Context) *ProcessEvent {
 	return &ProcessEvent{
-		Log: ctx.Value(Log).(*log.Logger),
 		ctx: ctx,
 	}
 }
 
 func (p *ProcessEvent) Run(c chan string) {
-	builder := core.NewBuilder(p.Log)
+	builder := core.NewBuilder()
 	p.image = core.NewImageReader(builder)
 	p.file = core.NewFileReader(builder)
 	for i := 0; i < config.General.Worker; i++ {
