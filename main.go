@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/hinha/watchgo/fswatch"
+	"github.com/hinha/watchgo/logger"
 	"github.com/rjeczalik/notify"
 	"log"
 	"os"
@@ -16,30 +17,25 @@ import (
 func init() {
 	// print help
 	if len(os.Args) < 2 {
-		fmt.Println(fmt.Sprintf("Usage: %s -options=param\n\n", config.AppName))
+		log.Println(fmt.Sprintf("Usage: %s -options=param\n\n", config.AppName))
 		flag.PrintDefaults()
 		os.Exit(0)
 	}
 
 	flag.BoolVar(&config.Debug, "debug", false, "examples --debug=true")
-	flag.StringVar(&config.ConfigFile, "c", "/etc/watchgo/config.yml", "examples --c=config.yml")
+	flag.StringVar(&config.File, "c", "/etc/watchgo/config.yml", "examples --c=config.yml")
 	flag.Parse()
 
-	if err := config.LoadConfig(config.ConfigFile); err != nil {
-		log.Fatalf("fatal open config file %s, error: %s\n", config.ConfigFile, err)
+	if err := config.LoadConfig(config.File); err != nil {
+		log.Fatalf("fatal open config file %s, error: %s\n", config.File, err)
 	}
 
-	config.Logger = NewLogger(&LogConfig{
-		AppName: config.AppName,
-		Debug:   config.Debug,
-		LogFile: config.General.InfoLog,
-	})
+	logger.SetGlobalLogger(logger.New())
 }
 
 func main() {
 	ctx := context.Background()
-	ctx = fswatch.Register(ctx, fswatch.Log, config.Logger)
-	ch, err := config.Watch(ctx, config.ConfigFile)
+	ch, err := config.Watch(ctx, config.File)
 	if err != nil {
 		panic(err)
 	}
@@ -49,7 +45,7 @@ func main() {
 			select {
 			case <-ch:
 				if err := config.ReloadConfig(); err != nil {
-					config.Logger.Printf("Error reloading config %v", err)
+					logger.Error().Err(err).Msg("Error reloading config")
 				}
 			}
 		}
@@ -58,6 +54,7 @@ func main() {
 	c := make(chan string, config.General.WorkerBuffer)
 	fchan := make(chan notify.EventInfo, config.General.EventBuffer)
 	done := make(chan struct{}, 1)
+	defer close(done)
 
 	fswatch.NewEvent(ctx).Run(c)
 
@@ -82,6 +79,9 @@ func main() {
 		}
 	}()
 
-	<-done
-	log.Println("exit.")
+	_, ok := <-done
+	if ok {
+		logger.Info().Msg("exit.")
+	}
+	os.Exit(0)
 }

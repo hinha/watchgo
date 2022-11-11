@@ -5,6 +5,7 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"errors"
+	"github.com/hinha/watchgo/logger"
 	"io/fs"
 	"log"
 	"os"
@@ -30,7 +31,6 @@ type FSWatcher struct {
 	Paths []string
 	M     *sync.RWMutex
 
-	log      *log.Logger
 	syncDone chan struct{}
 	image    *core.Image
 	file     *core.File
@@ -70,9 +70,7 @@ func (w *FSWatcher) FSWatcherStart(ctx context.Context) {
 	w.syncDone = make(chan struct{})
 	defer close(w.syncDone)
 
-	w.log = ctx.Value(Log).(*log.Logger)
-
-	builder := core.NewBuilder(w.log)
+	builder := core.NewBuilder()
 	w.image = core.NewImageReader(builder)
 	w.file = core.NewFileReader(builder)
 
@@ -116,14 +114,14 @@ func (w *FSWatcher) syncFile(path string) {
 	mDrive := make(map[string]string)
 	for r := range drive {
 		if r.err != nil {
-			w.log.Printf("Error hard drive %v\n", r.err)
+			logger.Error().Err(r.err).Msg("hard drive")
 			continue
 		}
 		mDrive[r.sum] = r.path
 	}
 
 	if err := <-driveErr; err != nil {
-		w.log.Printf("Error fatal hard drive %v\n", err)
+		logger.Error().Err(err).Msg("fatal hard drive")
 		return
 	}
 
@@ -132,7 +130,7 @@ func (w *FSWatcher) syncFile(path string) {
 	w.localDrive(path, local, localErr)
 	for r := range local {
 		if r.err != nil {
-			w.log.Printf("Error local drive %v\n", r.err)
+			logger.Error().Err(r.err).Msg("local drive")
 			continue
 		}
 
@@ -148,17 +146,17 @@ func (w *FSWatcher) syncFile(path string) {
 		subPath := strings.SplitAfter(r.path, path)
 		if reImage.MatchString(r.path) {
 			if err := w.image.Open(r.path, subPath); err != nil {
-				w.log.Printf("Error %v", err)
+				logger.Error().Err(err).Msg("image sync")
 			}
 		} else {
 			if err := w.file.Open(r.path, subPath); err != nil {
-				w.log.Printf("Error %v", err)
+				logger.Error().Err(err).Msg("file sync")
 			}
 		}
 	}
 
 	if err := <-localErr; err != nil {
-		w.log.Printf("Error fatal local drive %v\n", err)
+		logger.Error().Err(err).Msg("fatal local drive")
 		return
 	}
 
@@ -169,7 +167,7 @@ func (w *FSWatcher) hardDrive(c chan resultSync, errc chan error) {
 	dirPath := path.Join(config.FileSystemCfg.Backup.HardDrivePath, core.GetStaticBackupFolder())
 	if _, err := os.Stat(dirPath); os.IsNotExist(err) {
 		if err := os.Mkdir(dirPath, os.ModePerm); err != nil {
-			w.log.Printf("Error %v", err)
+			logger.Error().Err(err).Msg("hard drive create folder")
 			return
 		}
 	}
