@@ -67,7 +67,7 @@ func LoadConfig(configFile string) (error error) {
 		log.Printf("[%s] error: %s parse from file %s\n", AppName, err, filename)
 		return err
 	}
-	log.Printf("[%s] - load settings √\n", AppName)
+	log.Printf("load settings √\n")
 	return error
 }
 
@@ -75,16 +75,16 @@ func LoadConfig(configFile string) (error error) {
 func ReloadConfig() error {
 	filename, err := filepath.Abs(File)
 	if err != nil {
-		return fmt.Errorf("[%s] can not be reloaded, filepath Abs error: %s\n", AppName, err.Error())
+		return fmt.Errorf("can not be reloaded, filepath Abs error: %s", err.Error())
 	}
 	yamlFile, err := os.ReadFile(filename)
 	if err != nil {
-		return fmt.Errorf("[%s] can not be reloaded, can not read yaml-File: %s\n", AppName, err.Error())
+		return fmt.Errorf("can not be reloaded, can not read yaml-File: %s", err.Error())
 	}
 	err = yaml.Unmarshal(yamlFile, &cfg)
 	if err != nil {
 		return fmt.Errorf("[%s] error: %s parse from file %s\n", AppName, err, filename)
 	}
-	log.Printf("[%s] - Config file re-load: %s\n", AppName, filename)
+	log.Printf("Config file re-load: %s", filename)
 	return nil
 }
