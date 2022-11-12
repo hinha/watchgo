@@ -24,7 +24,7 @@ import (
 )
 
 // intervalDuration sync every 30 minutes
-var intervalDuration = 1 * time.Minute
+var intervalDuration = 30 * time.Minute
 
 type FSWatcher struct {
 	FChan chan notify.EventInfo
@@ -136,6 +136,17 @@ func (w *FSWatcher) syncFile(path string) {
 
 		if _, ok := mDrive[r.sum]; ok {
 			continue
+		} else {
+			var countDuplicate int
+			for _, v := range mDrive {
+				if filepath.Base(v) == filepath.Base(r.path) {
+					countDuplicate += 1
+				}
+			}
+
+			if countDuplicate >= 1 {
+				continue
+			}
 		}
 
 		reImage, err := regexp.Compile(core.Regexp())
