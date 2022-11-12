@@ -24,7 +24,7 @@ import (
 )
 
 // intervalDuration sync every 30 minutes
-var intervalDuration = 1 * time.Minute
+var intervalDuration = 30 * time.Minute
 
 type FSWatcher struct {
 	FChan chan notify.EventInfo
