@@ -4,14 +4,12 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"github.com/hinha/watchgo/config"
 	"github.com/hinha/watchgo/fswatch"
 	"github.com/hinha/watchgo/logger"
 	"github.com/rjeczalik/notify"
 	"log"
 	"os"
-	"sync"
-
-	"github.com/hinha/watchgo/config"
 )
 
 func init() {
@@ -58,11 +56,7 @@ func main() {
 
 	fswatch.NewEvent(ctx).Run(c)
 
-	watcher := &fswatch.FSWatcher{
-		FChan: fchan,
-		Paths: config.FileSystemCfg.Paths,
-		M:     &sync.RWMutex{},
-	}
+	watcher := &fswatch.FSWatcher{FChan: fchan}
 
 	watcher.FSWatcherStart(ctx)
 	defer notify.Stop(fchan)
@@ -81,7 +75,7 @@ func main() {
 
 	_, ok := <-done
 	if ok {
-		logger.Info().Msg("exit.")
+		logger.Info(0).Msg("exit.")
 	}
 	os.Exit(0)
 }

@@ -24,12 +24,10 @@ import (
 )
 
 // intervalDuration sync every 30 minutes
-var intervalDuration = 30 * time.Minute
+var intervalDuration = 1 * time.Minute
 
 type FSWatcher struct {
 	FChan chan notify.EventInfo
-	Paths []string
-	M     *sync.RWMutex
 
 	syncDone chan struct{}
 	image    *core.Image
@@ -53,7 +51,7 @@ func janitor(ctx context.Context, w *FSWatcher, interval time.Duration) {
 			ticker.Stop()
 
 			starTime := time.Now()
-			for i, p := range w.Paths {
+			for i, p := range config.FileSystemCfg.Paths {
 				w.syncFile(p, i)
 			}
 
@@ -75,7 +73,7 @@ func (w *FSWatcher) FSWatcherStart(ctx context.Context) {
 	w.file = core.NewFileReader(builder)
 
 	starTime := time.Now()
-	for i, p := range w.Paths {
+	for i, p := range config.FileSystemCfg.Paths {
 		w.syncFile(p, i)
 		go watcherInit(w.FChan, p)
 	}
