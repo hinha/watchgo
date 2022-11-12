@@ -47,8 +47,9 @@ func New() zerolog.Logger {
 	mw := zerolog.MultiLevelWriter(consoleWriterLeveled, fileWriterInfo, fileWriterError)
 	if config.Debug {
 		zerolog.SetGlobalLevel(zerolog.DebugLevel)
+	} else {
+		zerolog.SetGlobalLevel(zerolog.InfoLevel | zerolog.ErrorLevel)
 	}
-
 	return zerolog.New(mw).With().
 		Str("app", config.AppName).
 		Int("pid", os.Getpid()).
@@ -93,8 +94,8 @@ func Debug() *zerolog.Event {
 	return Logger.Debug()
 }
 
-func Info() *zerolog.Event {
-	return Logger.Info()
+func Info(duration time.Duration) *zerolog.Event {
+	return Logger.Info().Dur("duration", duration)
 }
 
 func Warn() *zerolog.Event {
