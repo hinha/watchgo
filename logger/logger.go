@@ -36,7 +36,7 @@ func New() zerolog.Logger {
 		if err != nil {
 			return i.(string)
 		}
-		return fmt.Sprintf("%d:%02d:%d", t.Hour(), t.Minute(), t.Second())
+		return fmt.Sprintf("%02d:%02d:%02d", t.Hour(), t.Minute(), t.Second())
 	}
 
 	consoleWriterLeveled := zerolog.MultiLevelWriter(consoleWriter)
