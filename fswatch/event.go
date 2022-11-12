@@ -7,6 +7,7 @@ import (
 
 	"github.com/hinha/watchgo/config"
 	"github.com/hinha/watchgo/core"
+	"github.com/hinha/watchgo/utils"
 )
 
 // ProcessEvent construct
@@ -41,6 +42,14 @@ func (p *ProcessEvent) process(event chan string) {
 	for {
 		select {
 		case evt := <-event:
+			if strings.HasSuffix(evt, "~") {
+				evt = evt[:len(evt)-1]
+			}
+
+			if utils.IgnoreExtension(evt) {
+				continue
+			}
+
 			fsp := strings.SplitAfterN(evt, "/", -1)
 			fxt := strings.Join(fsp[len(fsp)-1:], "")
 			fd := strings.Join(fsp[:len(fsp)-1], "")
