@@ -13,9 +13,10 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 )
 
-const staticBackupFolder = "backup_test"
+const staticBackupFolder = "Backup Files"
 
 var (
 	IsJpg, _ = regexp.Compile(`^.*.(JPG|jpeg|JPEG|jpg)$`)
@@ -47,11 +48,14 @@ type Builder interface {
 type builder struct{}
 
 func (c *builder) createFolder(subPath []string) string {
-	_, subFolder := subPath[0], subPath[1]
+	dstFolder, subFolder := subPath[0], subPath[1]
 	if strings.HasPrefix(subFolder, "/") {
 		// remove trailing slash
 		subFolder = subFolder[1:]
 	}
+
+	dfs := strings.Split(dstFolder, "/")
+	dstFolder = dfs[len(dfs)-1:][0]
 
 	// remove it file with extension abc.foo
 	fsp := strings.SplitAfterN(subFolder, "/", -1)
@@ -62,7 +66,7 @@ func (c *builder) createFolder(subPath []string) string {
 		subFolder = ""
 	}
 
-	originPath := path.Join(config.FileSystemCfg.Backup.HardDrivePath, staticBackupFolder, subFolder)
+	originPath := path.Join(config.FileSystemCfg.Backup.HardDrivePath, staticBackupFolder, dstFolder, subFolder)
 	if err := os.MkdirAll(originPath, os.ModePerm); err != nil {
 		logger.Error().Err(err).Msg("creating folder")
 		return ""
@@ -72,6 +76,7 @@ func (c *builder) createFolder(subPath []string) string {
 }
 
 func (c *builder) copy(srcPath, dstPath string) {
+	duration := time.Now()
 	sourceFileStat, _ := os.Stat(srcPath)
 	if !sourceFileStat.Mode().IsRegular() {
 		logger.Error().Err(fmt.Errorf("error %s is not a regular file", srcPath)).Msg("")
@@ -93,10 +98,11 @@ func (c *builder) copy(srcPath, dstPath string) {
 	defer destination.Close()
 
 	_, _ = io.Copy(destination, source)
-	logger.Info().Msg(fmt.Sprintf("Copy file %s into %s was successfully", filepath.Base(srcPath), dstPath))
+	logger.Info(time.Since(duration)).Msg(fmt.Sprintf("copy file %s into %s was successfully", filepath.Base(srcPath), dstPath))
 }
 
 func (c *builder) compress(quality int, filePath, interlace string) {
+	duration := time.Now()
 	fi, err := os.Stat(filePath)
 	if err != nil {
 		logger.Error().Err(err).Msg("load file")
@@ -113,7 +119,7 @@ func (c *builder) compress(quality int, filePath, interlace string) {
 
 	qualityNum, _ := strconv.ParseInt(string(out), 10, 0)
 	if int64(quality) >= qualityNum {
-		logger.Info().Msg(fmt.Sprintf("file %s already compressed", filePath))
+		logger.Info(time.Since(duration)).Msg(fmt.Sprintf("file %s already compressed", filePath))
 		return
 	}
 
@@ -129,7 +135,7 @@ func (c *builder) compress(quality int, filePath, interlace string) {
 
 	fl, _ := os.Stat(filePath)
 	afterSize := fl.Size()
-	logger.Info().Msg(fmt.Sprintf("compress file is done, filesize before %d, after %d", beforeSize, afterSize))
+	logger.Info(time.Since(duration)).Dur("duration", time.Since(duration)).Msg(fmt.Sprintf("compress file is done, filesize before %d, after %d", beforeSize, afterSize))
 	return
 }
 

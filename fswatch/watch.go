@@ -53,8 +53,8 @@ func janitor(ctx context.Context, w *FSWatcher, interval time.Duration) {
 			ticker.Stop()
 
 			starTime := time.Now()
-			for _, p := range w.Paths {
-				w.syncFile(p)
+			for i, p := range w.Paths {
+				w.syncFile(p, i)
 			}
 
 			// reset interval
@@ -75,10 +75,11 @@ func (w *FSWatcher) FSWatcherStart(ctx context.Context) {
 	w.file = core.NewFileReader(builder)
 
 	starTime := time.Now()
-	for _, p := range w.Paths {
-		w.syncFile(p)
+	for i, p := range w.Paths {
+		w.syncFile(p, i)
 		go watcherInit(w.FChan, p)
 	}
+	logger.Debug().Dur("duration", time.Since(starTime)).Msg("scanning complete")
 	go janitor(ctx, w, time.Since(starTime))
 }
 
@@ -106,7 +107,7 @@ type resultSync struct {
 	err  error
 }
 
-func (w *FSWatcher) syncFile(path string) {
+func (w *FSWatcher) syncFile(path string, index int) {
 	drive := make(chan resultSync)
 	driveErr := make(chan error, 1)
 	w.hardDrive(drive, driveErr)
@@ -127,7 +128,7 @@ func (w *FSWatcher) syncFile(path string) {
 
 	local := make(chan resultSync)
 	localErr := make(chan error, 1)
-	w.localDrive(path, local, localErr)
+	w.localDrive(path, index, local, localErr)
 	for r := range local {
 		if r.err != nil {
 			logger.Error().Err(r.err).Msg("local drive")
@@ -182,14 +183,14 @@ func (w *FSWatcher) hardDrive(c chan resultSync, errc chan error) {
 			return
 		}
 	}
-	go walkDir(w.syncDone, c, errc, dirPath)
+	go walkDir(w.syncDone, c, errc, dirPath, 0, false)
 }
 
-func (w *FSWatcher) localDrive(path string, c chan resultSync, errc chan error) {
-	go walkDir(w.syncDone, c, errc, path)
+func (w *FSWatcher) localDrive(path string, index int, c chan resultSync, errc chan error) {
+	go walkDir(w.syncDone, c, errc, path, index, true)
 }
 
-func walkDir(done <-chan struct{}, c chan resultSync, errc chan error, path string) {
+func walkDir(done <-chan struct{}, c chan resultSync, errc chan error, path string, index int, runLocal bool) {
 	var wg sync.WaitGroup
 	err := filepath.Walk(path, func(path string, info fs.FileInfo, err error) error {
 		if utils.IgnoreExtension(path) {
@@ -205,6 +206,15 @@ func walkDir(done <-chan struct{}, c chan resultSync, errc chan error, path stri
 		}
 
 		if !info.IsDir() {
+			if runLocal {
+				_, after, _ := strings.Cut(path, config.FileSystemCfg.Paths[index])
+				// start from .Folder/foo
+				ok, _ := utils.IsHiddenFile(after[1:])
+				if ok {
+					return nil
+				}
+			}
+
 			wg.Add(1)
 			go func() {
 				data, err := os.ReadFile(path)

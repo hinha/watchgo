@@ -23,6 +23,7 @@ package utils
 
 import (
 	"github.com/hinha/watchgo/config"
+	"os"
 	"path"
 	"regexp"
 	"strings"
@@ -78,7 +79,7 @@ var allowedExtension = []string{
 var (
 	ReExactPath, _ = regexp.Compile(`^(?:\/[^\/]+)+\/[^\/]+(\.[^.]+)$`)
 	// ReExactExt regex exact extension foo.abc.def
-	ReExactExt = regexp.MustCompile("(\\.[^.]+)*$")
+	ReExactExt = regexp.MustCompile("\\.([A-Za-z0-9]{2,5}($|\\b\\?))")
 )
 
 func init() {
@@ -108,6 +109,17 @@ func IgnoreExtension(fullPath string) bool {
 		}
 	}
 
+	stat, err := os.Stat(fullPath)
+	if err != nil {
+		return true
+	}
+
+	if stat.IsDir() {
+		if strings.HasPrefix(stat.Name(), ".") {
+			return true
+		}
+	}
+
 	if !ReExactPath.MatchString(fullPath) {
 		return true
 	}
@@ -117,8 +129,14 @@ func IgnoreExtension(fullPath string) bool {
 		return true
 	}
 
+	rExt := path.Ext(strings.ToLower(path.Base(exactExt)))
+	if len(rExt) == 0 {
+		return true
+	}
+
 	for _, ext := range allowedExtension {
-		if path.Ext(strings.ToLower(path.Base(exactExt)))[1:] == ext {
+		excludes := rExt[1:]
+		if excludes == ext {
 			return false
 		}
 	}
