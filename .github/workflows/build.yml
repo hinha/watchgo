@@ -26,8 +26,9 @@ jobs:
           cache-dependency-path: subdir/go.sum
       - name: Display Go version
         run: go version
-      - name: deploy
+      - name: build folder
         run: mkdir -p build/{386,amd64}
+      - name: deploy
         uses: 0xnu/go-deploy-action@master
         with:
           args: linux/amd64 darwin/amd64 linux/386
