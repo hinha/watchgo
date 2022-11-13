@@ -29,4 +29,5 @@ jobs:
       - name: deploy
         uses: 0xnu/go-deploy-action@master
         with:
+          path: cmd/*.go
           args: linux/amd64 darwin/amd64 linux/386
