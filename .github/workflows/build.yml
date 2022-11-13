@@ -1,0 +1,34 @@
+name: Go
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go-version: [ '1.19.*' ]
+
+    env:
+      GITHUB_TOKEN: ${{ secrets.G_TOKEN }}
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup Go ${{ matrix.go-version }}
+        uses: actions/setup-go@v3
+        with:
+          go-version: ${{ matrix.go-version }}
+          cache: true
+          cache-dependency-path: subdir/go.sum
+      - name: Display Go version
+        run: go version
+      - name: build folder
+        run: mkdir -p build/{386,amd64}
+      - name: deploy
+        uses: 0xnu/go-deploy-action@master
+        with:
+          args: linux/amd64 darwin/amd64 linux/386
