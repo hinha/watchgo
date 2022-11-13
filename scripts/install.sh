@@ -1,76 +1,36 @@
-#!/bin/bash -e
-# shellcheck disable=SC2193
-lowercase(){
-    echo "$1" | sed "y/ABCDEFGHIJKLMNOPQRSTUVWXYZ/abcdefghijklmnopqrstuvwxyz/"
-}
+VERSION="$1"
 
-OS=`lowercase \`uname\``
-KERNEL=`uname -r`
-MACH=`uname -m`
+PATH="$PATH:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin"
+TARGET_DIR=/usr/local/bin/gowatch
+CONF_DIR=/etc/gowatch
+LOG_DIR=/var/log/gowatch
+PERM="chmod +x /usr/local/bin/gowatch"
 
-if [ "{$OS}" == "windowsnt" ]; then
-    OS=windows
-elif [ "$OS" == "darwin" ]; then
-    OS=mac
-    which -s brew
-    if [[ $? != 0 ]] ; then
-        # Install Homebrew
-        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-    else
-        brew update
-    fi
-
-    brew install imagemagick
-
+if [ `getconf LONG_BIT` = "32" ]; then
+    ARCH="386"
 else
-    OS=`uname`
-    if [ "${OS}" = "SunOS" ] ; then
-        OS=Solaris
-        ARCH=`uname -p`
-        OSSTR="${OS} ${REV}(${ARCH} `uname -v`)"
-    elif [ "${OS}" = "AIX" ] ; then
-        OSSTR="${OS} `oslevel` (`oslevel -r`)"
-    elif [ "${OS}" = "Linux" ] ; then
-        if [ -f /etc/redhat-release ] ; then
-            DistroBasedOn='RedHat'
-            DIST=`cat /etc/redhat-release |sed s/\ release.*//`
-            PSUEDONAME=`cat /etc/redhat-release | sed s/.*\(// | sed s/\)//`
-            REV=`cat /etc/redhat-release | sed s/.*release\ // | sed s/\ .*//`
-        elif [ -f /etc/SuSE-release ] ; then
-            DistroBasedOn='SuSe'
-            PSUEDONAME=`cat /etc/SuSE-release | tr "\n" ' '| sed s/VERSION.*//`
-            REV=`cat /etc/SuSE-release | tr "\n" ' ' | sed s/.*=\ //`
-        elif [ -f /etc/mandrake-release ] ; then
-            DistroBasedOn='Mandrake'
-            PSUEDONAME=`cat /etc/mandrake-release | sed s/.*\(// | sed s/\)//`
-            REV=`cat /etc/mandrake-release | sed s/.*release\ // | sed s/\ .*//`
-        elif [ -f /etc/debian_version ] ; then
-            DistroBasedOn='Debian'
-            DIST=`cat /etc/lsb-release | grep '^DISTRIB_ID' | awk -F=  '{ print $2 }'`
-            PSUEDONAME=`cat /etc/lsb-release | grep '^DISTRIB_CODENAME' | awk -F=  '{ print $2 }'`
-            REV=`cat /etc/lsb-release | grep '^DISTRIB_RELEASE' | awk -F=  '{ print $2 }'`
-        fi
-        if [ -f /etc/UnitedLinux-release ] ; then
-            DIST="${DIST}[`cat /etc/UnitedLinux-release | tr "\n" ' ' | sed s/VERSION.*//`]"
-        fi
-        OS=`lowercase $OS`
-        DistroBasedOn=`lowercase $DistroBasedOn`
-        readonly OS
-        readonly DIST
-        readonly DistroBasedOn
-        readonly PSUEDONAME
-        readonly REV
-        readonly KERNEL
-        readonly MACH
-    fi
-
-fi
-#echo $OS
-#echo $KERNEL
-#echo $MACH
-
-if [ "$OS" == "darwin" ]; then
-  echo "do1"
+    ARCH="amd64"
 fi
 
-# TODO install brew install pkgconfig on mac
+URL="https://github.com/hinha/watchgo/releases/download/$VERSION/watchgo-$ARCH"
+CONF_URL="https://raw.githubusercontent.com/hinha/watchgo/main/config.yml"
+
+if [ -n "`which curl`" ]; then
+    download_cmd="curl -L $URL --output $TARGET_DIR"
+    conf_download_cmd="curl -L $CONF_URL --output $CONF_DIR/config.yml"
+else
+    die "Failed to download watchgo: curl not found, plz install curl"
+fi
+
+mkdir -p $CONF_DIR $LOG_DIR
+
+echo -n "Fetching watchgo from $URL: "
+$download_cmd || die "Error when downloading watchgo from $URL"
+$conf_download_cmd || die "Error when downloading config file watchgo from $CONF_URL"
+/bin/echo -e "Install watchgo: \x1B[32m done \x1B[0m"
+
+echo -n "Set permission execute watchgo: "
+$PERM || die "Error permission execut watchgo from $TARGET_DIR"
+/bin/echo -e "\x1B[32m done \x1B[0m"
+watchgo -v
+/bin/echo -e "\x1B[32m Finished \x1B[0m"
