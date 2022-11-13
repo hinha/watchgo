@@ -22,8 +22,6 @@ jobs:
         uses: actions/setup-go@v3
         with:
           go-version: ${{ matrix.go-version }}
-          cache: true
-          cache-dependency-path: $GOPATH/pkg/mod/go.sum
       - name: Display Go version
         run: go version
       - name: build folder
