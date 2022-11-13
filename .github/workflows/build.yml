@@ -23,7 +23,7 @@ jobs:
         with:
           go-version: ${{ matrix.go-version }}
           cache: true
-          cache-dependency-path: subdir/go.sum
+          cache-dependency-path: $GOPATH/pkg/mod/go.sum
       - name: Display Go version
         run: go version
       - name: build folder
