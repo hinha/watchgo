@@ -1,0 +1,24 @@
+name: Go
+on:
+  pull_request:
+    branches: [ main ]
+    paths:
+      - "**/*.go"
+      - ".github/workflows/golangci-lint.yml"
+permissions:
+  contents: read
+  # Optional: allow read access to pull request. Use with `only-new-issues` option.
+  # pull-requests: read
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout codebase
+        uses: actions/checkout@v2
+
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v2
+        with:
+          version: latest
+          args: --config=.github/linters/.golangci.yml
+          only-new-issues: true
