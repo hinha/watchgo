@@ -24,8 +24,8 @@ script: echo "pass"
 
 # build the app,build the package
 before_deploy:
-  - mkdir -p build/{386,amd64}
-  - GOOS=linux GOARCH=386 go build --ldflags "-X main.version=${TRAVIS_TAG} -X main.build=${TRAVIS_BUILD_NUMBER} -X main.commit=${TRAVIS_COMMIT} -X main.docs=https://github.com/hinha/watchgo/blob/master/README.md" -o build/386/${MYAPP}-386 ./cmd/main.go
+  - mkdir -p build/amd64
+  - export CGO_ENABLED=1
   - GOOS=linux GOARCH=amd64 go build --ldflags "-X main.version=${TRAVIS_TAG} -X main.build=${TRAVIS_BUILD_NUMBER} -X main.commit=${TRAVIS_COMMIT} -X main.docs=https://github.com/hinha/watchgo/blob/master/README.md" -o build/amd64/${MYAPP}-amd64 ./cmd/main.go
 
 deploy:
@@ -34,7 +34,6 @@ deploy:
   api_key:
     secure: ${GH_TOKEN}
   file:
-    - build/386/${MYAPP}-386
     - build/amd64/${MYAPP}-amd64
   skip_cleanup: true
   on:
