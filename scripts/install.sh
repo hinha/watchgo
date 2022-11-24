@@ -1,10 +1,10 @@
 VERSION="$1"
 
 PATH="$PATH:/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin"
-TARGET_DIR=/usr/local/bin/gowatch
-CONF_DIR=/etc/gowatch
-LOG_DIR=/var/log/gowatch
-PERM="chmod +x /usr/local/bin/gowatch"
+TARGET_DIR=/usr/local/bin/watchgo
+CONF_DIR=/etc/watchgo
+LOG_DIR=/var/log/watchgo
+PERM="chmod +x /usr/local/bin/watchgo"
 
 if [ `getconf LONG_BIT` = "32" ]; then
     ARCH="386"
