@@ -9,7 +9,7 @@ env:
   global:
     - MYAPP=watchgo
     - MYEMAIL=martinuz.dawan9@gmail.com
-    - secure: ${GH_TOKEN}
+    - secure: ${GITHUB_TOKEN}
 
 before_install:
   - sudo apt-get -qq update
@@ -32,7 +32,7 @@ deploy:
   provider: releases
   email: martinuz.dawan9@gmail.com
   api_key:
-    secure: ${GH_TOKEN}
+    secure: ${GITHUB_TOKEN}
   file:
     - build/amd64/${MYAPP}-amd64
   skip_cleanup: true
