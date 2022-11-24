@@ -16,7 +16,8 @@ before_install:
   - mkdir -p ${GOPATH}/bin
 
 install:
-  - go get -u github.com/hinha/$MYAPP
+#  - go get -u github.com/hinha/$MYAPP
+  - ls
   - cd $GOPATH/src/github.com/hinha/$MYAPP
   - go install
 
