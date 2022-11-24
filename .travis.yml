@@ -3,6 +3,8 @@ language: go
 go:
   - 1.19.2
 
+install: true
+
 env:
   global:
     - MYAPP=watchgo
@@ -11,6 +13,7 @@ env:
 
 before_install:
   - sudo apt-get -qq update
+  - mkdir -p ${GOPATH}/bin
 
 install:
   - go get -u github.com/hinha/$MYAPP
