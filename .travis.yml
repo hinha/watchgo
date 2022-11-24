@@ -9,7 +9,7 @@ env:
   global:
     - MYAPP=watchgo
     - MYEMAIL=martinuz.dawan9@gmail.com
-    - secure: ${GITHUB_TOKEN}
+    - secure: "sfsnUmwZdFPiEgeL/dZR1T0jAeOapTIlb0dykqG9KuK7G1knXrI/hyBMaYTN89Z58fyW/sD47eTSnSgm5WPTq7JvkkPVLNXw73qm3rWdGhRRdI9IL8jTyW/KDDRUpMyCQ6KqPIqESOEWJqa9jWXM1zS43J7uhgo+OqEVVO/fWX9tLW03jDTgTByUO+hTdxbGRIti6VtKOLdW2uTjqQunv95fkZWfRHGS/SsKF02rB+UXoaSwuSJCxgWnf1jsC9GotFZtPg3k7T7B5FpHXX/axkV+XgB3lbRZz0FlyF23cZIiZAPdiRCFn+7SsLvnjwTHMSu3y2ck4cGWR8ICP6lbibWoE77Yj6kVUL40r0Q6pg+JI22LEs5tP5QHLgJvZ+uVjhmDJsWVOy05Rzjxqq9Y0arwhmzurno3l7/qcEAPxiQYzGdbnufsZFGDpRDIupAE/vF+hANNUvgTcblUAitvmCjJC9lQ8mEOc3Ya8aLj1yxIV3097wLZt1p8rgCTEW5XR7Eo+EJZz3oh3fUOx7weAm/rktxlD0ocR0ePgup+gwNhn//44THYKMlk6CIrMdNXt3LbhNjomXrUCJarxmbDte9cKtIa89bBKGgtBOHXvz0zsduVoEtvHlhys3G4WvOUYrL1j7jJzegdICyMz8X/0BbOohPOMCjmLo1i1wNaXsw="
 
 before_install:
   - sudo apt-get -qq update
@@ -32,7 +32,7 @@ deploy:
   provider: releases
   email: martinuz.dawan9@gmail.com
   api_key:
-    secure: ${GITHUB_TOKEN}
+    secure: "sfsnUmwZdFPiEgeL/dZR1T0jAeOapTIlb0dykqG9KuK7G1knXrI/hyBMaYTN89Z58fyW/sD47eTSnSgm5WPTq7JvkkPVLNXw73qm3rWdGhRRdI9IL8jTyW/KDDRUpMyCQ6KqPIqESOEWJqa9jWXM1zS43J7uhgo+OqEVVO/fWX9tLW03jDTgTByUO+hTdxbGRIti6VtKOLdW2uTjqQunv95fkZWfRHGS/SsKF02rB+UXoaSwuSJCxgWnf1jsC9GotFZtPg3k7T7B5FpHXX/axkV+XgB3lbRZz0FlyF23cZIiZAPdiRCFn+7SsLvnjwTHMSu3y2ck4cGWR8ICP6lbibWoE77Yj6kVUL40r0Q6pg+JI22LEs5tP5QHLgJvZ+uVjhmDJsWVOy05Rzjxqq9Y0arwhmzurno3l7/qcEAPxiQYzGdbnufsZFGDpRDIupAE/vF+hANNUvgTcblUAitvmCjJC9lQ8mEOc3Ya8aLj1yxIV3097wLZt1p8rgCTEW5XR7Eo+EJZz3oh3fUOx7weAm/rktxlD0ocR0ePgup+gwNhn//44THYKMlk6CIrMdNXt3LbhNjomXrUCJarxmbDte9cKtIa89bBKGgtBOHXvz0zsduVoEtvHlhys3G4WvOUYrL1j7jJzegdICyMz8X/0BbOohPOMCjmLo1i1wNaXsw="
   file:
     - build/amd64/${MYAPP}-amd64
   skip_cleanup: true
