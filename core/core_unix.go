@@ -1,9 +1,7 @@
-//go:build linux && amd64 && go1.19 && !cgo
-// +build linux,amd64,go1.19,!cgo
+//go:build !windows
 
 package core
 
-import "C"
 import (
 	"fmt"
 	"github.com/hinha/watchgo/config"
@@ -21,9 +19,7 @@ import (
 
 const staticBackupFolder = "Backup Files"
 
-var (
-	IsJpg, _ = regexp.Compile(`^.*.(JPG|jpeg|JPEG|jpg)$`)
-)
+var IsJpg, _ = regexp.Compile(`^.*.(JPG|jpeg|JPEG|jpg)$`)
 
 type ByteSize float64
 
