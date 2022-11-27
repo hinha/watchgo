@@ -20,6 +20,6 @@ jobs:
         uses: peter-evans/repository-dispatch@v1
         with:
           token: ${{ secrets.G_TOKEN }}
-          repository: caddyserver/dist
+          repository: gowatch/dist
           event-type: release-tagged
           client-payload: '{"tag": "${{ github.event.release.tag_name }}"}'
