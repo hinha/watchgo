@@ -29,7 +29,7 @@ import (
 	"strings"
 )
 
-// allowedExtension a wordlist allowed extension
+// allowedExtension a wordlist allowed extension.
 var allowedExtension = []string{
 	// video
 	"trec", "arf", "m4v", "mts", "MTS", "3gp", "mkv", "flv", "swf", "rm", "mp4", "mov", "wmv", "rmvb", "divx", "mpeg", "mpg", "avi",
@@ -40,7 +40,7 @@ var allowedExtension = []string{
 	// image
 	"jpeg", "psp", "tiff", "tga", "cr2", "CR2", "psd", "ico", "sct", "pxr", "pct", "pic", "raw", "jpe", "tif", "png", "bmp", "jpg", "gif",
 	// document
-	"maf", "mpt", "xltx", "pptm", "ott", "ots", "otp", "txt", "pptx", "mat", "mar", "maq", "oti", "otf", "otg", "otc", "vdx", "ppt", "vssm", "xlsm", "xls", "vsdx", "xlt", "xts", "xlsx", "rtf", "ppl", "doc", "mam", "vsdm", "oft", "slk", "ppsm", "xps", "vtx", "odb", "dif", "docm", "onetoc", "xsn", "adn", "docx",
+	"maf", "mpt", "xltx", "pptm", "ott", "ots", "otp", "txt", "pptx", "mat", "mar", "maq", "oti", "otf", "otg", "otc", "vdx", "ppt", "vssm", "xlsm", "xls", "vsdx", "xlt", "xts", "xlsx", "rtf", "ppl", "doc", "mam", "vsdm", "oft", "slk", "ppsm", "xps", "vtx", "odb", "dif", "docm", "onetoc", "xsn", "and", "docx",
 	"xltm", "one", "pot", "thmx", "vsd", "oth", "vsl", "vsw", "vst", "vss", "vsx", "adp", "accdr", "accdt", "odf", "accdb", "accde", "ppam", "potm", "odm", "odi", "dot", "odg", "sldm", "dotm", "odc", "msg", "vssx", "dotx", "odt", "ods", "odp", "sldx", "mdt", "mdw", "vstm", "onetoc2", "pub", "mde", "mdf", "vstx",
 	"mda", "mdb", "potx", "tsv", "pdf",
 	// compressed
@@ -78,8 +78,8 @@ var allowedExtension = []string{
 
 var (
 	ReExactPath, _ = regexp.Compile(`^(?:\/[^\/]+)+\/[^\/]+(\.[^.]+)$`)
-	// ReExactExt regex exact extension foo.abc.def
-	ReExactExt = regexp.MustCompile("\\.([A-Za-z0-9]{2,5}($|\\b\\?))")
+	// ReExactExt regex exact extension foo.abc.def.
+	ReExactExt = regexp.MustCompile(`\\.([A-Za-z0-9]{2,5}($|\\b\\?))`)
 )
 
 func init() {

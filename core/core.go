@@ -1,52 +1,19 @@
-//go:build linux && amd64 && go1.19 && !cgo
-// +build linux,amd64,go1.19,!cgo
-
 package core
 
-import "C"
 import (
 	"fmt"
-	"github.com/hinha/watchgo/config"
-	"github.com/hinha/watchgo/logger"
 	"io"
 	"os"
 	"os/exec"
 	"path"
 	"path/filepath"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/hinha/watchgo/config"
+	"github.com/hinha/watchgo/logger"
 )
-
-const staticBackupFolder = "Backup Files"
-
-var (
-	IsJpg, _ = regexp.Compile(`^.*.(JPG|jpeg|JPEG|jpg)$`)
-)
-
-type ByteSize float64
-
-const (
-	_           = iota // ignore first value by assigning to blank identifier
-	KB ByteSize = 1 << (10 * iota)
-	MB
-	GB
-)
-
-func Regexp() string {
-	if len(config.FileSystemCfg.Backup.Prefix) > 0 && config.FileSystemCfg.Backup.Prefix[0] != "*" {
-		prefix := fmt.Sprintf(`(%s).*.(JPG|jpeg|JPEG|jpg|png|PNG|pdf)$`, strings.Join(config.FileSystemCfg.Backup.Prefix, "|"))
-		return prefix
-	}
-	return `^.*.(JPG|jpeg|JPEG|jpg|png|PNG|pdf)$`
-}
-
-type Builder interface {
-	compress(quality int, imagePath, interlace string)
-	createFolder(subPath []string) string
-	copy(srcPath, dstPath string)
-}
 
 type builder struct{}
 
@@ -69,7 +36,7 @@ func (c *builder) createFolder(subPath []string) string {
 		subFolder = ""
 	}
 
-	originPath := path.Join(config.FileSystemCfg.Backup.HardDrivePath, staticBackupFolder, dstFolder, subFolder)
+	originPath := path.Join(config.FileSystemCfg.Backup.HardDrivePath, config.GetStaticBackupFolder(), dstFolder, subFolder)
 	if err := os.MkdirAll(originPath, os.ModePerm); err != nil {
 		logger.Error().Err(err).Msg("creating folder")
 		return ""
@@ -139,25 +106,8 @@ func (c *builder) compress(quality int, filePath, interlace string) {
 	fl, _ := os.Stat(filePath)
 	afterSize := fl.Size()
 	logger.Info(time.Since(duration)).Dur("duration", time.Since(duration)).Msg(fmt.Sprintf("compress file is done, filesize before %d, after %d", beforeSize, afterSize))
-	return
 }
 
 func NewBuilder() Builder {
 	return &builder{}
-}
-
-func GetStaticBackupFolder() string {
-	return staticBackupFolder
-}
-
-func (b ByteSize) String() string {
-	switch {
-	case b >= GB:
-		return fmt.Sprintf("%.2fGB", b/GB)
-	case b >= MB:
-		return fmt.Sprintf("%.2fMB", b/MB)
-	case b >= KB:
-		return fmt.Sprintf("%.2fKB", b/KB)
-	}
-	return fmt.Sprintf("%.2fB", b)
 }

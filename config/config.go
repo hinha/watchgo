@@ -9,7 +9,10 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-const AppName = "watch-go"
+const (
+	AppName            = "watch-go"
+	staticBackupFolder = "Backup Files"
+)
 
 var (
 	cfg  config
@@ -49,8 +52,7 @@ type CompressConfig struct {
 }
 
 // LoadConfig Read and parse config file.
-func LoadConfig(configFile string) (error error) {
-	error = nil
+func LoadConfig(configFile string) error {
 	filename, err := filepath.Abs(configFile)
 	if err != nil {
 		log.Printf("[%s] error: %s fail find config\n", AppName, err)
@@ -68,10 +70,10 @@ func LoadConfig(configFile string) (error error) {
 		return err
 	}
 	log.Printf("load settings √\n")
-	return error
+	return nil
 }
 
-// ReloadConfig parse yml config
+// ReloadConfig parse yml config.
 func ReloadConfig() error {
 	filename, err := filepath.Abs(File)
 	if err != nil {
@@ -87,4 +89,8 @@ func ReloadConfig() error {
 	}
 	log.Printf("Config file re-load: %s", filename)
 	return nil
+}
+
+func GetStaticBackupFolder() string {
+	return staticBackupFolder
 }
