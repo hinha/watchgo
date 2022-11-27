@@ -23,7 +23,7 @@ import (
 	"github.com/hinha/watchgo/utils"
 )
 
-// intervalDuration sync every 30 minutes
+// intervalDuration sync every 30 minutes.
 var intervalDuration = 30 * time.Minute
 
 type FSWatcher struct {
@@ -91,7 +91,7 @@ func (w *FSWatcher) FSWatcherStop() {
 	}
 }
 
-// watcherInit
+// watcherInit.
 func watcherInit(w *fsnotify.Watcher, path string) {
 	if err := w.Add(path); err != nil {
 		log.Fatalf("watch path %s error: %s\n", path, err)
@@ -139,7 +139,7 @@ func (w *FSWatcher) syncFile(path string, index int) {
 			var countDuplicate int
 			for _, v := range mDrive {
 				if filepath.Base(v) == filepath.Base(r.path) {
-					countDuplicate += 1
+					countDuplicate++
 				}
 			}
 
@@ -169,8 +169,6 @@ func (w *FSWatcher) syncFile(path string, index int) {
 		logger.Error().Err(err).Msg("fatal local drive")
 		return
 	}
-
-	return
 }
 
 func (w *FSWatcher) hardDrive(c chan resultSync, errc chan error) {

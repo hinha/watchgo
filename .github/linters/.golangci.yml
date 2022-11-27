@@ -17,7 +17,13 @@ linters-settings:
     settings:
       mnd:
         # don't include the "operation" and "assign" checks
-        checks: argument,case,condition,return
+        checks: [argument,case,return]
+    ignored-functions:
+      - os.Chmod
+      - os.Mkdir
+      - os.MkdirAll
+      - os.OpenFile
+      - os.WriteFile
   govet:
     check-shadowing: true
   nolintlint:
@@ -27,7 +33,6 @@ linters-settings:
 linters:
   disable-all: true
   enable:
-    - bodyclose
     - deadcode
     - depguard
     - dogsled
@@ -38,27 +43,19 @@ linters:
     - goconst
     - godot
     - gofmt
-    - goimports
-    - gomnd
     - gocyclo
     - goprintffuncname
     - gosec
-    - gosimple
-    - govet
     - ineffassign
     - misspell
     - nakedret
     - nolintlint
     - prealloc
     - predeclared
-    - revive
     - staticcheck
-    - structcheck
     - thelper
-    - tparallel
     - typecheck
     - unconvert
-    - unparam
     - varcheck
     - whitespace
 

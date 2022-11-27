@@ -32,7 +32,7 @@ func init() {
 
 	// print help
 	if len(os.Args) < 2 {
-		log.Println(fmt.Sprintf("Usage: %s -options=param\n\n", config.AppName))
+		log.Printf("Usage: %s -options=param\n\n", config.AppName)
 		flag.PrintDefaults()
 		os.Exit(0)
 	}
@@ -47,7 +47,6 @@ func init() {
 }
 
 func main() {
-
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -59,6 +58,8 @@ func main() {
 	go func() {
 		for {
 			select {
+			case <-ctx.Done():
+				return
 			case <-ch:
 				if err := config.ReloadConfig(); err != nil {
 					logger.Error().Err(err).Msg("Error reloading config")
@@ -104,7 +105,7 @@ func main() {
 	os.Exit(0)
 }
 
-// printVersion program build data
+// printVersion program build data.
 func printVersion() {
 	fmt.Printf("Version: %s\nBuild Time: %s\nGit Commit Hash: %s\nAuthor: %s\nDocs: %s\n\n\n", version, build, commit, author, docs)
 }

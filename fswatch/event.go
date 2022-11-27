@@ -11,7 +11,7 @@ import (
 	"github.com/hinha/watchgo/utils"
 )
 
-// ProcessEvent construct
+// ProcessEvent construct.
 type ProcessEvent struct {
 	ctx context.Context
 
@@ -19,7 +19,7 @@ type ProcessEvent struct {
 	file  *core.File
 }
 
-// NewEvent cmd wrapper
+// NewEvent cmd wrapper.
 func NewEvent(ctx context.Context) *ProcessEvent {
 	return &ProcessEvent{
 		ctx: ctx,

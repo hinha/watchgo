@@ -25,7 +25,6 @@ func SetGlobalLogger(log zerolog.Logger) {
 }
 
 func New() zerolog.Logger {
-
 	zerolog.TimeFieldFormat = globalFormatTime
 	zerolog.TimestampFunc = func() time.Time {
 		return time.Now().In(time.Local)
@@ -59,7 +58,7 @@ func New() zerolog.Logger {
 }
 
 func newRollingFile(logPath string) io.Writer {
-	if err := os.MkdirAll(path.Dir(logPath), 0744); err != nil {
+	if err := os.MkdirAll(path.Dir(logPath), os.ModeDir); err != nil {
 		log.Error().Err(err).Str("path", path.Dir(logPath)).Msg("can't create log directory")
 		return nil
 	}

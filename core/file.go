@@ -19,7 +19,6 @@ type File struct {
 }
 
 func (i *File) Open(lPath string, subPath []string) error {
-
 	folder := i.builder.createFolder(subPath)
 	if folder == "" {
 		return fmt.Errorf("error creating folder")

@@ -106,7 +106,6 @@ func (c *builder) compress(quality int, filePath, interlace string) {
 	fl, _ := os.Stat(filePath)
 	afterSize := fl.Size()
 	logger.Info(time.Since(duration)).Dur("duration", time.Since(duration)).Msg(fmt.Sprintf("compress file is done, filesize before %d, after %d", beforeSize, afterSize))
-	return
 }
 
 func NewBuilder() Builder {
