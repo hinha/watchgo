@@ -4,10 +4,10 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"github.com/fsnotify/fsnotify"
 	"github.com/hinha/watchgo/config"
 	"github.com/hinha/watchgo/fswatch"
 	"github.com/hinha/watchgo/logger"
-	"github.com/rjeczalik/notify"
 	"log"
 	"os"
 )
@@ -49,26 +49,33 @@ func main() {
 		}
 	}()
 
-	c := make(chan string, config.General.WorkerBuffer)
-	fchan := make(chan notify.EventInfo, config.General.EventBuffer)
+	c := make(chan fsnotify.Event, config.General.WorkerBuffer)
+	watch, err := fsnotify.NewWatcher()
+	if err != nil {
+		logger.Fatal().Err(err)
+	}
+
+	//fchan := make(chan notify.EventInfo, config.General.EventBuffer)
 	done := make(chan struct{}, 1)
 	defer close(done)
 
 	fswatch.NewEvent(ctx).Run(c)
 
-	watcher := &fswatch.FSWatcher{FChan: fchan}
+	watcher := &fswatch.FSWatcher{Events: watch.Events}
 
-	watcher.FSWatcherStart(ctx)
-	defer notify.Stop(fchan)
+	watcher.FSWatcherStart(ctx, watch)
+	defer watch.Close()
 
 	// Process events
 	go func() {
 		for {
 			select {
-			case ev := <-fchan:
-				c <- ev.Path()
 			case <-ctx.Done():
+				done <- struct{}{}
+				watch.Close()
 				return
+			case ev := <-watch.Events:
+				c <- ev
 			}
 		}
 	}()

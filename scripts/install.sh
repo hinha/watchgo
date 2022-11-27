@@ -22,7 +22,18 @@ else
     die "Failed to download watchgo: curl not found, plz install curl"
 fi
 
-mkdir -p $CONF_DIR $LOG_DIR
+sudo chown -R $(whoami) $TARGET_DIR
+
+if [ ! -d $CONF_DIR ]; then
+	sudo mkdir -p $CONF_DIR
+	echo "Creating folder $CONF_DIR"
+fi
+sudo chown -R $(whoami) $CONF_DIR
+if [ ! -d $LOG_DIR ]; then
+	sudo mkdir -p $LOG_DIR
+	echo "Creating folder $LOG_DIR"
+fi
+sudo chown -R $(whoami) $LOG_DIR
 
 echo -n "Fetching watchgo from $URL: "
 $download_cmd || die "Error when downloading watchgo from $URL"

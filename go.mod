@@ -3,7 +3,7 @@ module github.com/hinha/watchgo
 go 1.19
 
 require (
-	github.com/rjeczalik/notify v0.9.2
+	github.com/fsnotify/fsnotify v1.6.0
 	github.com/rs/zerolog v1.28.0
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0
 	gopkg.in/yaml.v2 v2.4.0
