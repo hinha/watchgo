@@ -93,7 +93,6 @@ func (w *FSWatcher) FSWatcherStop() {
 
 // watcherInit
 func watcherInit(w *fsnotify.Watcher, path string) {
-	path = filepath.Join(path, "/...")
 	if err := w.Add(path); err != nil {
 		log.Fatalf("watch path %s error: %s\n", path, err)
 	}
@@ -175,12 +174,9 @@ func (w *FSWatcher) syncFile(path string, index int) {
 }
 
 func (w *FSWatcher) hardDrive(c chan resultSync, errc chan error) {
-	dirPath := path.Join(config.FileSystemCfg.Backup.HardDrivePath, core.GetStaticBackupFolder())
+	dirPath := path.Join(config.FileSystemCfg.Backup.HardDrivePath, config.GetStaticBackupFolder())
 	if _, err := os.Stat(dirPath); os.IsNotExist(err) {
-		if err := os.Mkdir(dirPath, os.ModePerm); err != nil {
-			logger.Error().Err(err).Msg("hard drive create folder")
-			return
-		}
+		_ = os.Mkdir(dirPath, 0700)
 	}
 	go walkDir(w.syncDone, c, errc, dirPath, 0, false)
 }

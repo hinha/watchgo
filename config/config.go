@@ -9,7 +9,10 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-const AppName = "watch-go"
+const (
+	AppName            = "watch-go"
+	staticBackupFolder = "Backup Files"
+)
 
 var (
 	cfg  config
@@ -87,4 +90,8 @@ func ReloadConfig() error {
 	}
 	log.Printf("Config file re-load: %s", filename)
 	return nil
+}
+
+func GetStaticBackupFolder() string {
+	return staticBackupFolder
 }
