@@ -12,7 +12,24 @@ import (
 	"os"
 )
 
+var (
+	version string
+	build   string
+	commit  string
+	author  string
+	docs    string
+)
+
 func init() {
+	if len(os.Args) == 2 && (os.Args[1] == "--version" || os.Args[1] == "-v" || os.Args[1] == "ver") {
+		printVersion()
+		os.Exit(0)
+	}
+
+	flag.BoolVar(&config.Debug, "debug", false, "examples --debug=true")
+	flag.StringVar(&config.File, "c", "/etc/watchgo/config.yml", "examples --c=config.yml")
+	flag.Parse()
+
 	// print help
 	if len(os.Args) < 2 {
 		log.Println(fmt.Sprintf("Usage: %s -options=param\n\n", config.AppName))
@@ -20,9 +37,7 @@ func init() {
 		os.Exit(0)
 	}
 
-	flag.BoolVar(&config.Debug, "debug", false, "examples --debug=true")
-	flag.StringVar(&config.File, "c", "/etc/watchgo/config.yml", "examples --c=config.yml")
-	flag.Parse()
+	printVersion()
 
 	if err := config.LoadConfig(config.File); err != nil {
 		log.Fatalf("fatal open config file %s, error: %s\n", config.File, err)
@@ -32,7 +47,10 @@ func init() {
 }
 
 func main() {
-	ctx := context.Background()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	ch, err := config.Watch(ctx, config.File)
 	if err != nil {
 		panic(err)
@@ -55,7 +73,6 @@ func main() {
 		logger.Fatal().Err(err)
 	}
 
-	//fchan := make(chan notify.EventInfo, config.General.EventBuffer)
 	done := make(chan struct{}, 1)
 	defer close(done)
 
@@ -85,4 +102,9 @@ func main() {
 		logger.Info(0).Msg("exit.")
 	}
 	os.Exit(0)
+}
+
+// printVersion program build data
+func printVersion() {
+	fmt.Printf("Version: %s\nBuild Time: %s\nGit Commit Hash: %s\nAuthor: %s\nDocs: %s\n\n\n", version, build, commit, author, docs)
 }
