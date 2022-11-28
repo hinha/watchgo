@@ -79,7 +79,7 @@ var allowedExtension = []string{
 var (
 	ReExactPath, _ = regexp.Compile(`^(?:\/[^\/]+)+\/[^\/]+(\.[^.]+)$`)
 	// ReExactExt regex exact extension foo.abc.def.
-	ReExactExt = regexp.MustCompile(`\\.([A-Za-z0-9]{2,5}($|\\b\\?))`)
+	ReExactExt = regexp.MustCompile(`\.([A-Za-z0-9]{2,5}($|\b\?))`)
 )
 
 func init() {
