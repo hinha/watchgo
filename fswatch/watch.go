@@ -1,10 +1,13 @@
 package fswatch
 
 import (
+	"bufio"
 	"context"
-	"crypto/md5"
+	"crypto/sha1"
 	"encoding/hex"
 	"errors"
+	"fmt"
+	"io"
 	"io/fs"
 	"log"
 	"os"
@@ -79,7 +82,7 @@ func (w *FSWatcher) FSWatcherStart(ctx context.Context, watch *fsnotify.Watcher)
 	for i, p := range config.FileSystemCfg.Paths {
 		w.syncFile(p, i)
 		//go watcherInit(w.FChan, p)
-		go watcherInit(w.w, p)
+		go watcherInit(ctx, w.w, p)
 	}
 	logger.Debug().Dur("duration", time.Since(starTime)).Msg("scanning complete")
 	go janitor(ctx, w, time.Since(starTime))
@@ -92,9 +95,57 @@ func (w *FSWatcher) FSWatcherStop() {
 }
 
 // watcherInit.
-func watcherInit(w *fsnotify.Watcher, path string) {
-	if err := w.Add(path); err != nil {
-		log.Fatalf("watch path %s error: %s\n", path, err)
+func watcherInit(ctx context.Context, w *fsnotify.Watcher, path string) {
+	dirs := func(root string) ([]string, error) {
+		var folders []string
+		err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
+			if info.IsDir() {
+				folders = append(folders, path)
+			}
+			return nil
+		})
+		return folders, err
+	}
+
+	list, err := dirs(path)
+	if err != nil {
+		log.Fatalf("walk dir %s", err)
+	}
+
+	// sync dir never stop initial watcher
+	go func() {
+		interval := 3 * time.Second
+		ticker := time.NewTicker(interval)
+		for {
+			select {
+			case <-ticker.C:
+				ticker.Stop()
+
+				list, err := dirs(path)
+				if err != nil {
+					ticker.Stop()
+					return
+				}
+
+				for _, f := range list {
+					if err := w.Add(f); err != nil {
+						log.Fatalf("watch path %s error: %s\n", path, err)
+					}
+				}
+
+				// reset interval
+				ticker = time.NewTicker(interval)
+			case <-ctx.Done():
+				ticker.Stop()
+				return
+			}
+		}
+	}()
+
+	for _, f := range list {
+		if err := w.Add(f); err != nil {
+			log.Fatalf("watch path %s error: %s\n", path, err)
+		}
 	}
 }
 
@@ -108,6 +159,7 @@ type resultSync struct {
 func (w *FSWatcher) syncFile(path string, index int) {
 	drive := make(chan resultSync)
 	driveErr := make(chan error, 1)
+	defer close(driveErr)
 	w.hardDrive(drive, driveErr)
 
 	mDrive := make(map[string]string)
@@ -124,45 +176,51 @@ func (w *FSWatcher) syncFile(path string, index int) {
 		return
 	}
 
-	local := make(chan resultSync)
+	local := make(chan resultSync, config.General.WorkerBuffer)
 	localErr := make(chan error, 1)
-	w.localDrive(path, index, local, localErr)
-	for r := range local {
-		if r.err != nil {
-			logger.Error().Err(r.err).Msg("local drive")
-			continue
-		}
+	defer close(localErr)
 
-		if _, ok := mDrive[r.sum]; ok {
-			continue
-		} else {
-			var countDuplicate int
-			for _, v := range mDrive {
-				if filepath.Base(v) == filepath.Base(r.path) {
-					countDuplicate++
+	w.localDrive(path, index, local, localErr)
+	for work := 0; work < config.General.Worker; work++ {
+		go func(id int, jobs <-chan resultSync) {
+			for r := range jobs {
+				if r.err != nil {
+					logger.Error().Err(r.err).Msg("local drive")
+					continue
+				}
+
+				if _, ok := mDrive[r.sum]; ok {
+					continue
+				} else {
+					var countDuplicate int
+					for _, v := range mDrive {
+						if filepath.Base(v) == filepath.Base(r.path) {
+							countDuplicate++
+						}
+					}
+
+					if countDuplicate >= 1 {
+						continue
+					}
+				}
+
+				reImage, err := regexp.Compile(core.Regexp())
+				if err != nil {
+					continue
+				}
+
+				subPath := strings.SplitAfter(r.path, path)
+				if reImage.MatchString(r.path) {
+					if err := w.image.Open(r.path, subPath); err != nil {
+						continue
+					}
+				} else {
+					if err := w.file.Open(r.path, subPath); err != nil {
+						continue
+					}
 				}
 			}
-
-			if countDuplicate >= 1 {
-				continue
-			}
-		}
-
-		reImage, err := regexp.Compile(core.Regexp())
-		if err != nil {
-			continue
-		}
-
-		subPath := strings.SplitAfter(r.path, path)
-		if reImage.MatchString(r.path) {
-			if err := w.image.Open(r.path, subPath); err != nil {
-				logger.Error().Err(err).Msg("image sync")
-			}
-		} else {
-			if err := w.file.Open(r.path, subPath); err != nil {
-				logger.Error().Err(err).Msg("file sync")
-			}
-		}
+		}(work, local)
 	}
 
 	if err := <-localErr; err != nil {
@@ -206,16 +264,36 @@ func walkDir(done <-chan struct{}, c chan resultSync, errc chan error, path stri
 				if ok {
 					return nil
 				}
+
+				size := utils.ByteSize(info.Size())
+				maxSize := utils.ByteSize(config.FileSystemCfg.MaxFileSize) * utils.MB
+				if size >= maxSize {
+					logger.Error().Str("path", path).Err(fmt.Errorf("size limit %s, of maximum %s", size.String(), maxSize.String())).Msg("local drive")
+					return nil
+				}
 			}
 
 			wg.Add(1)
 			go func() {
-				data, err := os.ReadFile(path)
-				sum := md5.Sum(data)
+				fos, err := os.Open(path)
+				defer func() {
+					_ = fos.Close()
+				}()
+				if err != nil {
+					c <- resultSync{"", "", err}
+					return
+				}
+				reader := bufio.NewReader(fos)
+
+				hash := sha1.New()
+				_, _ = io.Copy(hash, reader)
+
+				sum := hash.Sum(nil)
 				select {
 				case c <- resultSync{path, hex.EncodeToString(sum[:]), err}:
 				case <-done:
 				}
+
 				wg.Done()
 			}()
 		}

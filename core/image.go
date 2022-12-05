@@ -1,10 +1,12 @@
 package core
 
 import (
-	"github.com/hinha/watchgo/config"
+	"fmt"
 	"os"
 	"path"
 	"path/filepath"
+
+	"github.com/hinha/watchgo/config"
 )
 
 var (
@@ -22,6 +24,9 @@ type Image struct {
 
 func (i *Image) Open(lPath string, subPath []string) error {
 	folder := i.builder.createFolder(subPath)
+	if folder == "" {
+		return fmt.Errorf("error creating folder")
+	}
 	fi, _ := os.Stat(lPath)
 
 	lPath = filepath.Clean(lPath)

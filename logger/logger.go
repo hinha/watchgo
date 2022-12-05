@@ -21,6 +21,10 @@ var (
 )
 
 func SetGlobalLogger(log zerolog.Logger) {
+	zerolog.SetGlobalLevel(zerolog.InfoLevel)
+	if config.Debug {
+		zerolog.SetGlobalLevel(zerolog.DebugLevel)
+	}
 	Logger = log
 }
 
@@ -46,11 +50,7 @@ func New() zerolog.Logger {
 	fileWriterError := &FilteredWriter{zerolog.MultiLevelWriter(newRollingFile(config.General.ErrorLog)), zerolog.ErrorLevel}
 
 	mw := zerolog.MultiLevelWriter(consoleWriterLeveled, fileWriterInfo, fileWriterError)
-	if config.Debug {
-		zerolog.SetGlobalLevel(zerolog.DebugLevel)
-	} else {
-		zerolog.SetGlobalLevel(zerolog.InfoLevel | zerolog.ErrorLevel)
-	}
+
 	return zerolog.New(mw).With().
 		Str("app", config.AppName).
 		Int("pid", os.Getpid()).

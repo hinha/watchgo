@@ -6,7 +6,6 @@ import (
 	"os"
 	"os/exec"
 	"path"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -38,7 +37,7 @@ func (c *builder) createFolder(subPath []string) string {
 
 	originPath := path.Join(config.FileSystemCfg.Backup.HardDrivePath, config.GetStaticBackupFolder(), dstFolder, subFolder)
 	if err := os.MkdirAll(originPath, os.ModePerm); err != nil {
-		logger.Error().Err(err).Msg("creating folder")
+		logger.Error().Str("path", originPath).Err(os.ErrPermission).Msg("creating folder")
 		return ""
 	}
 
@@ -49,33 +48,36 @@ func (c *builder) copy(srcPath, dstPath string) {
 	duration := time.Now()
 	sourceFileStat, _ := os.Stat(srcPath)
 	if !sourceFileStat.Mode().IsRegular() {
-		logger.Error().Err(fmt.Errorf("error %s is not a regular file", srcPath)).Msg("")
+		logger.Error().Str("path", srcPath).Err(fmt.Errorf("not a regular file")).Msg("stat")
 		return
 	}
 
 	source, err := os.Open(srcPath)
 	if err != nil {
-		logger.Error().Err(err).Msg("source open file")
+		logger.Error().Str("path", srcPath).Err(err).Msg("source open file")
 		return
 	}
 	defer source.Close()
 
 	destination, err := os.Create(dstPath)
 	if err != nil {
-		logger.Error().Err(err).Msg("destination create file")
+		logger.Error().Str("path", srcPath).Err(err).Msg("destination create file")
 		return
 	}
 	defer destination.Close()
 
 	_, _ = io.Copy(destination, source)
-	logger.Info(time.Since(duration)).Msg(fmt.Sprintf("copy file %s into %s was successfully", filepath.Base(srcPath), dstPath))
+	logger.Info(time.Since(duration)).
+		Str("path", srcPath).
+		Str("dstPath", dstPath).
+		Msg("copy file was successfully")
 }
 
 func (c *builder) compress(quality int, filePath, interlace string) {
 	duration := time.Now()
 	fi, err := os.Stat(filePath)
 	if err != nil {
-		logger.Error().Err(err).Msg("load file")
+		logger.Error().Str("path", filePath).Err(err).Msg("load file")
 		return
 	}
 	beforeSize := fi.Size()
@@ -83,13 +85,13 @@ func (c *builder) compress(quality int, filePath, interlace string) {
 	cmd := fmt.Sprintf("identify -format %s '%s'", "'%Q'", filePath)
 	out, err := exec.Command("bash", "-c", cmd).Output()
 	if err != nil {
-		logger.Error().Err(err).Msg(fmt.Sprintf("incorrect file name %s", filePath))
+		logger.Error().Str("path", filePath).Err(err).Msg("incorrect file name")
 		return
 	}
 
 	qualityNum, _ := strconv.ParseInt(string(out), 10, 0)
 	if int64(quality) >= qualityNum {
-		logger.Info(time.Since(duration)).Msg(fmt.Sprintf("file %s already compressed", filePath))
+		logger.Info(time.Since(duration)).Str("path", filePath).Msg("file already compressed")
 		return
 	}
 
@@ -100,12 +102,12 @@ func (c *builder) compress(quality int, filePath, interlace string) {
 		filePath)
 
 	if _, err := exec.Command("bash", "-c", cmd).Output(); err != nil {
-		logger.Error().Err(err).Msg("compress image")
+		logger.Error().Str("path", filePath).Err(err).Msg("compress image")
 	}
 
 	fl, _ := os.Stat(filePath)
 	afterSize := fl.Size()
-	logger.Info(time.Since(duration)).Dur("duration", time.Since(duration)).Msg(fmt.Sprintf("compress file is done, filesize before %d, after %d", beforeSize, afterSize))
+	logger.Info(time.Since(duration)).Str("path", filePath).Msg(fmt.Sprintf("compress file is done, filesize before %d, after %d", beforeSize, afterSize))
 }
 
 func NewBuilder() Builder {
