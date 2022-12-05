@@ -7,12 +7,12 @@
 # event_buffer - maximum buffer an event reported by the underlying filesystem notification subsystem, Default value - 100
 ##
 general:
-  worker: 2
+  worker: 5
   worker_buffer: 100
   event_buffer: 300
   verbose: false
-  info_log: './log/info.log'
-  error_log: './log/error.log'
+  info_log: '/var/log/watchgo/info.log'
+  error_log: '/var/log/watchgo/error.log'
 # paths - directories you need to track
 # compress
 # - enabled - compression image, if false image compress will not be processed
