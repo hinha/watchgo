@@ -276,7 +276,9 @@ func walkDir(done <-chan struct{}, c chan resultSync, errc chan error, path stri
 			wg.Add(1)
 			go func() {
 				fos, err := os.Open(path)
-				defer fos.Close()
+				defer func() {
+					_ = fos.Close()
+				}()
 				if err != nil {
 					c <- resultSync{"", "", err}
 					return
@@ -284,7 +286,7 @@ func walkDir(done <-chan struct{}, c chan resultSync, errc chan error, path stri
 				reader := bufio.NewReader(fos)
 
 				hash := sha1.New()
-				io.Copy(hash, reader)
+				_, _ = io.Copy(hash, reader)
 
 				sum := hash.Sum(nil)
 				select {
